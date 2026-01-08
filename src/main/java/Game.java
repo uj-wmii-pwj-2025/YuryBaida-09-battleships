@@ -16,6 +16,9 @@ public class Game {
     private boolean win;
 
     public Point calcShot() {
+        if (enemyBoard.getAreAvailable().isEmpty()) {
+            return null;
+        }
         Set<Point> set = enemyBoard.getAreAvailable();
         int randomInt = random.nextInt(set.size());
         int i = 0;
@@ -37,16 +40,16 @@ public class Game {
                 enemyBoard.killed(aim);
                 finished = true;
                 win = true;
+                enemyBoard.clearAllWater();
             }
         }
     }
 
     public ResultShot takeShot(Point point) {
-        ResultShot resultShot = board.shoot(point);
+        ResultShot resultShot = board.shot(point);
         if (resultShot == ResultShot.LAST_KILLED) {
             finished = true;
         }
         return resultShot;
     }
-
 }

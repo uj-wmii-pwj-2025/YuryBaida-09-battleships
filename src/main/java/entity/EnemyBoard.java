@@ -7,7 +7,6 @@ import java.util.*;
 public class EnemyBoard {
 
     private char[][] grid;
-//    private final List<Ship> ships = new LinkedList<>();
     @Getter
     private final Set<Point> areAvailable = new HashSet<>();
 
@@ -15,20 +14,8 @@ public class EnemyBoard {
         fillQuestions();
     }
 
-    private void fillQuestions() {
-        System.out.println("Make new EnemyBoard");
-        grid = new char[10][10];
-        for (int r = 0; r < 10; r++) {
-            for (int c = 0; c < 10; c++) {
-                grid[r][c] = '?';
-                areAvailable.add(new Point(r, c));
-            }
-        }
-        System.out.println("Make new EnemyBoard: areAvailable: " + areAvailable.size() );
-    }
-
     public void miss(Point aim) {
-        grid[aim.getX()][aim.getY()] = '~';
+        grid[aim.getX()][aim.getY()] = '.';
         areAvailable.remove(aim);
     }
 
@@ -41,6 +28,31 @@ public class EnemyBoard {
         damaged(aim);
         Ship ship = findShip(aim);
         cleanWater(ship);
+    }
+
+    public String toString() {
+        StringBuilder sb = new StringBuilder();
+        for (int r = 0; r < 10; r++) {
+            for (int c = 0; c < 10; c++) {
+                sb.append(grid[r][c]);
+            }
+            sb.append("\n");
+        }
+        return sb.toString();
+    }
+
+    public void print() {
+        System.out.println(this);
+    }
+
+    private void fillQuestions() {
+        grid = new char[10][10];
+        for (int r = 0; r < 10; r++) {
+            for (int c = 0; c < 10; c++) {
+                grid[r][c] = '?';
+                areAvailable.add(new Point(r, c));
+            }
+        }
     }
 
     private Ship findShip(Point aim) {
@@ -78,6 +90,14 @@ public class EnemyBoard {
                     grid[newRow][newCol] = '.';
                     areAvailable.remove(new Point(newRow, newCol));
                 }
+            }
+        }
+    }
+
+    public void clearAllWater() {
+        if (!areAvailable.isEmpty()) {
+            for (Point point : areAvailable) {
+                grid[point.getX()][point.getY()] = '.';
             }
         }
     }

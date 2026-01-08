@@ -2,11 +2,17 @@ import entity.*;
 
 import java.io.*;
 import java.net.*;
+import java.util.Objects;
+
+import static entity.Globals.safeReceive;
 
 public class Server {
 
     private final int port;
     private final Game game;
+    private String lastSentMessage;
+    private String lastGetMessage;
+
 
     public Server(int port, Game game) {
         this.port = port;
@@ -14,10 +20,12 @@ public class Server {
     }
 
     public void run() {
+
         System.out.println("Server listening on port " + port);
 
         try (ServerSocket serverSocket = new ServerSocket(port);
              Socket socket = serverSocket.accept()) {
+            socket.setSoTimeout(1000);
 
             System.out.println("Client connected: " + socket.getRemoteSocketAddress());
 
@@ -27,13 +35,16 @@ public class Server {
                     new OutputStreamWriter(socket.getOutputStream(), "UTF-8"));
             int cnt = 0;
             Point myShot = new Point(0, 0);
-            while (cnt < 100 || !game.isFinished()) {
 
-                String response = in.readLine();
+            while (cnt < 100 && !game.isFinished()) {
+                Message gotten = safeReceive(in, out, lastSentMessage);
+                String response = gotten.toString();
+                if (Objects.equals(response, lastGetMessage)) {
+                    continue;
+                } else {
+                    lastGetMessage = response;
+                }
                 System.out.println("Received from client: " + response);
-                Message gotten = new Message(response);
-                System.out.println("Received from client msg: " + gotten);
-
                 if (cnt != 0) {
                     game.saveShotResult(gotten.getCommand(), myShot);
                 }
@@ -41,17 +52,14 @@ public class Server {
                     ResultShot resultShot = game.takeShot(gotten.getCoordinate());
                     myShot = game.calcShot();
                     Message answer = new Message(resultShot, myShot);
-                    response = answer.toString();
-                    out.write(response);
+                    out.write(answer.toString());
+                    lastSentMessage = answer.toString();
                     out.flush();
-                    System.out.println("Sent to client: " + response);
-                } else {
-                    game.setFinished(true);
-                    game.setWin(true);
+                    System.out.println("Sent to client: " + answer);
                 }
                 cnt++;
-                if (cnt % 5 == 0) {
-                    game.getBoard().print();
+                if (cnt % 8 == 0) {
+                    Thread.sleep(2000);
                 }
             }
             if (game.isWin()) {
@@ -59,8 +67,11 @@ public class Server {
             } else {
                 System.out.println("Przegrana\n");
             }
+            game.getEnemyBoard().print();
+            System.out.println();
+            game.getBoard().print();
 
-        } catch (IOException e) {
+        } catch (IOException | InterruptedException e) {
             e.printStackTrace();
         }
     }
